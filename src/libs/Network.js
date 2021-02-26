@@ -26,7 +26,7 @@ let didLoadPersistedRequests;
 Onyx.connect({
     key: ONYXKEYS.NETWORK_REQUEST_QUEUE,
     callback: (persistedRequests) => {
-        if (didLoadPersistedRequests) {
+        if (!persistedRequests || didLoadPersistedRequests) {
             return;
         }
 
@@ -99,19 +99,15 @@ function shouldRetryRequest(request) {
 function processNetworkRequestQueue() {
     // NetInfo tells us whether the app is offline
     if (isOffline) {
-        const data = {
-            doNotRetry: true,
-        };
-        if (email) {
-            data.email = email;
+        if (!networkRequestQueue.length) {
+            return;
         }
 
-        if (networkRequestQueue.length > 0) {
-            // If we have a request then we need to persist it in case we close the tab while offline
-            const retryableRequests = _.reject(networkRequestQueue, request => request.doNotRetry);
-            Onyx.set(ONYXKEYS.NETWORK_REQUEST_QUEUE, retryableRequests);
-        }
-
+        // If we have a request then we need to check if it can be persisted in case we close the tab while offline
+        const retryableRequests = _.filter(networkRequestQueue, request => (
+            !request.data.doNotRetry && request.data.persist
+        ));
+        Onyx.set(ONYXKEYS.NETWORK_REQUEST_QUEUE, retryableRequests);
         return;
     }
 

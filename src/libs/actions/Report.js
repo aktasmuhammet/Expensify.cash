@@ -633,6 +633,7 @@ function addAction(reportID, text, file) {
         reportComment: htmlComment,
         file,
         clientID: optimisticReportActionID,
+        persist: !isAttachment,
     })
         .then(({reportAction}) => updateReportWithNewAction(reportID, reportAction));
 }
